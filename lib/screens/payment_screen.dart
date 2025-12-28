@@ -41,8 +41,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _startPayment() async {
-    setState(() => _isProcessing = true);
-
     try {
       // 1. Processar Pagamento (PlugPag)
       PaymentResult paymentResult;
@@ -59,11 +57,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (!paymentResult.success) {
         throw Exception(paymentResult.errorMessage ?? 'Pagamento não aprovado');
       }
-
-      setState(() {
-         // Atualizar status para "Registrando venda..." se quisesse, 
-         // mas aqui mantém o loading geral.
-      });
 
       // 2. Obter credenciais
       final creds = await _storageService.getCredentials();
