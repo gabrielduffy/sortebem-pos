@@ -8,11 +8,14 @@ import '../models/sale.dart';
 class ApiService {
   Future<Terminal> activateTerminal(String terminalId, String apiKey) async {
     try {
-      final url = '${ApiConfig.baseUrl.trim()}${ApiConfig.authEndpoint.trim()}';
+      final url = Uri.parse('https://api.sortebem.com.br/pos/auth');
       final response = await http.post(
-        Uri.parse(url),
-        headers: {ApiConfig.headerContentType: 'application/json'},
-        body: jsonEncode({'terminal_id': terminalId.trim(), 'api_key': apiKey.trim()}),
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'terminal_id': terminalId.trim(),
+          'api_key': apiKey.trim()
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -32,12 +35,12 @@ class ApiService {
 
   Future<RoundResponse> getCurrentRound(String terminalId) async {
     try {
-      final url = '${ApiConfig.baseUrl.trim()}${ApiConfig.currentRoundEndpoint.trim()}';
+      final url = Uri.parse('https://api.sortebem.com.br/pos/round/current');
       final response = await http.get(
-        Uri.parse(url),
+        url,
         headers: {
-          ApiConfig.headerContentType: 'application/json',
-          ApiConfig.headerTerminalId: terminalId.trim(),
+          'Content-Type': 'application/json',
+          'X-Terminal-ID': terminalId.trim(),
         },
       );
 
@@ -58,12 +61,12 @@ class ApiService {
 
   Future<SaleResponse> createSale(String terminalId, SaleRequest request) async {
     try {
-      final url = '${ApiConfig.baseUrl.trim()}${ApiConfig.saleEndpoint.trim()}';
+      final url = Uri.parse('https://api.sortebem.com.br/pos/sale');
       final response = await http.post(
-        Uri.parse(url),
+        url,
         headers: {
-          ApiConfig.headerContentType: 'application/json',
-          ApiConfig.headerTerminalId: terminalId.trim(),
+          'Content-Type': 'application/json',
+          'X-Terminal-ID': terminalId.trim(),
         },
         body: jsonEncode(request.toJson()),
       );
