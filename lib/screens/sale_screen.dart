@@ -66,11 +66,10 @@ class _SaleScreenState extends State<SaleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          children: [
-            const Text('SORTEBEM POS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(mockTerminal.establishment.name, style: const TextStyle(fontSize: 12)),
-          ],
+        title: Image.asset(
+          'assets/logo.png',
+          height: 40,
+          fit: BoxFit.contain,
         ),
         centerTitle: true,
         backgroundColor: const Color(0xFFF97316),
