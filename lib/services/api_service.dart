@@ -8,10 +8,11 @@ import '../models/sale.dart';
 class ApiService {
   Future<Terminal> activateTerminal(String terminalId, String apiKey) async {
     try {
+      final url = '${ApiConfig.baseUrl.trim()}${ApiConfig.authEndpoint.trim()}';
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.authEndpoint}'),
+        Uri.parse(url),
         headers: {ApiConfig.headerContentType: 'application/json'},
-        body: jsonEncode({'terminal_id': terminalId, 'api_key': apiKey}),
+        body: jsonEncode({'terminal_id': terminalId.trim(), 'api_key': apiKey.trim()}),
       );
 
       if (response.statusCode == 200) {
@@ -31,11 +32,12 @@ class ApiService {
 
   Future<RoundResponse> getCurrentRound(String terminalId) async {
     try {
+      final url = '${ApiConfig.baseUrl.trim()}${ApiConfig.currentRoundEndpoint.trim()}';
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.currentRoundEndpoint}'),
+        Uri.parse(url),
         headers: {
           ApiConfig.headerContentType: 'application/json',
-          ApiConfig.headerTerminalId: terminalId,
+          ApiConfig.headerTerminalId: terminalId.trim(),
         },
       );
 
@@ -56,11 +58,12 @@ class ApiService {
 
   Future<SaleResponse> createSale(String terminalId, SaleRequest request) async {
     try {
+      final url = '${ApiConfig.baseUrl.trim()}${ApiConfig.saleEndpoint.trim()}';
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.saleEndpoint}'),
+        Uri.parse(url),
         headers: {
           ApiConfig.headerContentType: 'application/json',
-          ApiConfig.headerTerminalId: terminalId,
+          ApiConfig.headerTerminalId: terminalId.trim(),
         },
         body: jsonEncode(request.toJson()),
       );
