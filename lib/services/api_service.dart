@@ -8,13 +8,16 @@ import '../models/sale.dart';
 class ApiService {
   Future<Terminal> activateTerminal(String terminalId, String apiKey) async {
     try {
-      final url = Uri.parse('https://api.sortebem.com.br/pos/auth');
+      final uri = Uri.https(ApiConfig.baseUrl, ApiConfig.authPath);
       final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: jsonEncode({
           'terminal_id': terminalId.trim(),
-          'api_key': apiKey.trim()
+          'api_key': apiKey.trim(),
         }),
       );
 
@@ -35,11 +38,12 @@ class ApiService {
 
   Future<RoundResponse> getCurrentRound(String terminalId) async {
     try {
-      final url = Uri.parse('https://api.sortebem.com.br/pos/round/current');
+      final uri = Uri.https(ApiConfig.baseUrl, ApiConfig.currentRoundPath);
       final response = await http.get(
-        url,
+        uri,
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'X-Terminal-ID': terminalId.trim(),
         },
       );
@@ -61,11 +65,12 @@ class ApiService {
 
   Future<SaleResponse> createSale(String terminalId, SaleRequest request) async {
     try {
-      final url = Uri.parse('https://api.sortebem.com.br/pos/sale');
+      final uri = Uri.https(ApiConfig.baseUrl, ApiConfig.salePath);
       final response = await http.post(
-        url,
+        uri,
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'X-Terminal-ID': terminalId.trim(),
         },
         body: jsonEncode(request.toJson()),
