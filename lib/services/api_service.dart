@@ -6,18 +6,25 @@ import '../models/round.dart';
 import '../models/sale.dart';
 
 class ApiService {
+  // Função para garantir que a string tenha apenas caracteres ASCII válidos
+  String _clean(String input) {
+    return input.replaceAll(RegExp(r'[^\x20-\x7E]'), '').trim();
+  }
+
   Future<Terminal> activateTerminal(String terminalId, String apiKey) async {
     try {
-      final uri = Uri.https(ApiConfig.baseUrl, ApiConfig.authPath);
+      final host = _clean(ApiConfig.baseUrl);
+      final path = _clean(ApiConfig.authPath);
+      final uri = Uri.https(host, path);
+      
+      print('DEBUG: Chamando API em: ${uri.toString()}');
+
       final response = await http.post(
         uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        // Removendo headers manuais temporariamente para isolar o erro "Invalid name"
         body: jsonEncode({
-          'terminal_id': terminalId.trim(),
-          'api_key': apiKey.trim(),
+          'terminal_id': _clean(terminalId),
+          'api_key': _clean(apiKey),
         }),
       );
 
@@ -32,19 +39,21 @@ class ApiService {
         throw Exception('Erro na requisição: ${response.statusCode}');
       }
     } catch (e) {
+      print('DEBUG: Erro detalhado: $e');
       throw Exception('Erro de conexão: $e');
     }
   }
 
   Future<RoundResponse> getCurrentRound(String terminalId) async {
     try {
-      final uri = Uri.https(ApiConfig.baseUrl, ApiConfig.currentRoundPath);
+      final host = _clean(ApiConfig.baseUrl);
+      final path = _clean(ApiConfig.currentRoundPath);
+      final uri = Uri.https(host, path);
+
       final response = await http.get(
         uri,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Terminal-ID': terminalId.trim(),
+          'X-Terminal-ID': _clean(terminalId),
         },
       );
 
@@ -65,13 +74,14 @@ class ApiService {
 
   Future<SaleResponse> createSale(String terminalId, SaleRequest request) async {
     try {
-      final uri = Uri.https(ApiConfig.baseUrl, ApiConfig.salePath);
+      final host = _clean(ApiConfig.baseUrl);
+      final path = _clean(ApiConfig.salePath);
+      final uri = Uri.https(host, path);
+
       final response = await http.post(
         uri,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Terminal-ID': terminalId.trim(),
+          'X-Terminal-ID': _clean(terminalId),
         },
         body: jsonEncode(request.toJson()),
       );
