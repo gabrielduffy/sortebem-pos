@@ -30,11 +30,88 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   final _paymentService = PaymentService();
   bool _isProcessing = false;
+  Map<String, String>? _customerData;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startPayment());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initFlow());
+  }
+
+  Future<void> _initFlow() async {
+    // 1. Mostrar Dialog de Dados do Cliente
+    final data = await _showCustomerDialog();
+    if (data == null) {
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    
+    setState(() => _customerData = data);
+    _startPayment();
+  }
+
+  Future<Map<String, String>?> _showCustomerDialog() async {
+    final nameController = TextEditingController();
+    final phoneController = TextEditingController();
+    final cpfController = TextEditingController();
+    
+    return showDialog<Map<String, String>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Dados do Cliente'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Nome *'),
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(labelText: 'Telefone'),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: cpfController,
+                decoration: const InputDecoration(labelText: 'CPF'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('CANCELAR'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF97316),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              if (nameController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nome é obrigatório')),
+                );
+                return;
+              }
+              Navigator.pop(context, {
+                'name': nameController.text.trim(),
+                'phone': phoneController.text.trim(),
+                'cpf': cpfController.text.trim(),
+              });
+            },
+            child: const Text('CONFIRMAR'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _startPayment() async {
@@ -42,11 +119,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => _isProcessing = true);
 
     try {
-      // 1. Processar Pagamento (Mocked service handles web)
+      // 2. Iniciar Pagamento no PagSeguro (Mock handles web)
       PaymentResult paymentResult;
       
-      await Future.delayed(const Duration(seconds: 2));
-
       if (widget.method == PaymentMethod.credit) {
         paymentResult = await _paymentService.payCredit(widget.totalAmount);
       } else {
@@ -57,20 +132,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
         throw Exception(paymentResult.errorMessage ?? 'Pagamento não aprovado');
       }
 
-      // 2. Simular resposta da API (Mocked Sale)
+      // 3. Registrar na API (Mocked Sale response for now)
+      // Em produção aqui chamaria ApiService.createSale()
+      await Future.delayed(const Duration(seconds: 1)); // Simula delay da API
+      
       final saleResponse = SaleResponse(
-        purchaseId: DateTime.now().millisecondsSinceEpoch,
-        cards: [
-          BingoCard(
-            code: 'SB-ABC12345',
-            numbers: [1,5,12,23,34,45,56,67,8,19,20,31,42,53,64,75,6,17,28,39,50,61,72,3,14],
-          ),
-          if (widget.quantity > 1)
-            BingoCard(
-              code: 'SB-XYZ67890',
-              numbers: [2,6,13,24,35,46,57,68,9,20,21,32,43,54,65,71,7,18,29,40,51,62,73,4,15],
-            ),
-        ],
+        purchase: Purchase(
+          id: DateTime.now().millisecondsSinceEpoch,
+          totalAmount: widget.totalAmount,
+          paymentStatus: 'approved',
+        ),
+        cards: List.generate(widget.quantity, (index) => BingoCard(
+          id: index + 1,
+          code: 'SB-${_generateRandomCode()}',
+          numbers: _generateMockNumbers(),
+        )),
       );
 
       if (mounted) {
@@ -93,10 +169,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               message: e.toString().contains('Exception') 
                   ? e.toString().split('Exception: ')[1] 
                   : e.toString(),
-              onRetry: () {
-                Navigator.of(context).pop();
-                _startPayment();
-              },
+              onRetry: _startPayment,
             ),
           ),
         );
@@ -104,6 +177,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
+  }
+
+  String _generateRandomCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final rnd = DateTime.now().microsecondsSinceEpoch;
+    return List.generate(8, (i) => chars[(rnd + i) % chars.length]).join();
+  }
+
+  List<List<int>> _generateMockNumbers() {
+    return List.generate(5, (row) => 
+      List.generate(5, (col) => (row * 15) + (col * 3) + 1)
+    );
   }
 
   @override
@@ -124,7 +209,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const LoadingIndicator(message: 'Agurdando Pagamento...'),
+              const LoadingIndicator(message: 'Aguardando Pagamento...'),
               const SizedBox(height: 24),
               Text(
                 'R\$ ${widget.totalAmount.toStringAsFixed(2)}',
@@ -132,6 +217,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
               const SizedBox(height: 16),
               const Text('Insira ou aproxime o cartão', style: TextStyle(fontSize: 18)),
+              if (_customerData != null) ...[
+                const SizedBox(height: 32),
+                Text('Cliente: ${_customerData!['name']}', style: const TextStyle(color: Colors.grey)),
+              ],
             ],
           ),
         ),

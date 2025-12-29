@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/sale.dart';
 import '../models/round.dart';
-import '../models/terminal.dart';
+import '../models/card.dart';
 import '../services/printer_service.dart';
-import '../utils/receipt_generator.dart';
 import '../widgets/loading_indicator.dart';
 
 class SuccessScreen extends StatefulWidget {
@@ -24,38 +23,61 @@ class SuccessScreen extends StatefulWidget {
 
 class _SuccessScreenState extends State<SuccessScreen> {
   final _printerService = PrinterService();
-  bool _isPrinting = true;
-  String _status = 'Imprimindo comprovantes...';
+  bool _isPrinting = false;
+  String _status = 'Pagamento confirmado!';
 
   @override
   void initState() {
     super.initState();
-    _printReceipt();
+    // Iniciar primeira impressão automaticamente? 
+    // Melhor deixar o usuário clicar para economizar papel se ele não quiser.
   }
 
   Future<void> _printReceipt() async {
-    // Mock establishment name since we don't have it stored easily without full terminal object or extra call.
-    // For now using generic. Ideally should pass establishment name or fetch it.
-    // I'll create a dummy terminal object or fetch it if I could.
-    // To be safe, I'll use a placeholder or pass establishment name from previous screen if I had it.
-    // Let's rely on hardcoded for this demo or update the model requirement.
-    // I'll construct a temporary Terminal object.
-    
-    final tempTerminal = Terminal(
-        terminalId: widget.terminalId, 
-        establishment: Establishment(id: 0, name: 'SorteBem Pt')
-    );
+    setState(() {
+      _isPrinting = true;
+      _status = 'Imprimindo...';
+    });
 
-    final receipt = ReceiptGenerator.generate(widget.sale, widget.round, tempTerminal);
-    
-    final success = await _printerService.printReceipt(receipt);
-    
-    if (mounted) {
-      setState(() {
-        _isPrinting = false;
-        _status = success ? 'Impressão concluída' : 'Erro na impressão';
-      });
+    try {
+      // Simular impressão de cada cartela
+      for (var card in widget.sale.cards) {
+        String receipt = _generateReceiptText(card);
+        await _printerService.printReceipt(receipt);
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+      
+      setState(() => _status = 'Impressão concluída');
+    } catch (e) {
+      setState(() => _status = 'Erro na impressão: $e');
+    } finally {
+      setState(() => _isPrinting = false);
     }
+  }
+
+  String _generateReceiptText(BingoCard card) {
+    StringBuffer buffer = StringBuffer();
+    buffer.writeln('--------------------------------');
+    buffer.writeln('       SORTEBEM POS');
+    buffer.writeln('--------------------------------');
+    buffer.writeln('Rodada #${widget.round.number} (${widget.round.type.toUpperCase()})');
+    buffer.writeln('Data: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} ${DateTime.now().hour}:${DateTime.now().minute}');
+    buffer.writeln('--------------------------------');
+    buffer.writeln('CARTELA: ${card.code}');
+    buffer.writeln('--------------------------------');
+    
+    // Imprimir Grid 5x5
+    for (var row in card.numbers) {
+      buffer.writeln(row.map((n) => n.toString().padLeft(2, '0')).join('  '));
+    }
+    
+    buffer.writeln('--------------------------------');
+    buffer.writeln('Valor Pago: R\$ ${widget.round.cardPrice.toStringAsFixed(2)}');
+    buffer.writeln('--------------------------------');
+    buffer.writeln('       BOA SORTE!');
+    buffer.writeln('--------------------------------');
+    buffer.writeln('\n\n');
+    return buffer.toString();
   }
 
   @override
@@ -72,53 +94,94 @@ class _SuccessScreenState extends State<SuccessScreen> {
             ],
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Icon(Icons.check_circle, size: 80, color: Color(0xFF10B981)),
-              const SizedBox(height: 24),
-              const Text(
-                'Pagamento Aprovado!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '${widget.sale.cards.length} cartelas geradas',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 18),
-              ),
-              const SizedBox(height: 48),
-              if (_isPrinting)
-                LoadingIndicator(message: _status)
-              else
-                Text(_status, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
-                
-              const SizedBox(height: 48),
-              SizedBox(
-                height: 56,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF97316),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    // Pop until sale screen (root of this flow)
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  },
-                  child: const Text('NOVA VENDA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const Icon(Icons.check_circle, size: 80, color: Color(0xFF10B981)),
+                const SizedBox(height: 16),
+                const Text(
+                  'Pagamento Aprovado!',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                 ),
-              ),
-              if (!_isPrinting)
-                  TextButton(
-                      onPressed: _printReceipt,
-                      child: const Text('Reimprimir', style: TextStyle(color: Color(0xFFF97316))),
-                  )
-            ],
+                Text(
+                  '${widget.sale.cards.length} cartelas geradas',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: widget.sale.cards.length,
+                    itemBuilder: (context, index) {
+                      final card = widget.sale.cards[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('CÓDIGO: ${card.code}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              const Divider(),
+                              Table(
+                                children: card.numbers.map((row) {
+                                  return TableRow(
+                                    children: row.map((n) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        child: Text(n.toString(), textAlign: TextAlign.center),
+                                      );
+                                    }).toList(),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+                if (_isPrinting)
+                  const LoadingIndicator(message: 'Imprimindo...')
+                else
+                  Text(_status, style: const TextStyle(color: Colors.grey)),
+
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _isPrinting ? null : _printReceipt,
+                    icon: const Icon(Icons.print),
+                    label: const Text('IMPRIMIR BILHETES', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF97316),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                    child: const Text('NOVA VENDA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

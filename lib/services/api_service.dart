@@ -4,97 +4,102 @@ import '../config/api_config.dart';
 import '../models/terminal.dart';
 import '../models/round.dart';
 import '../models/sale.dart';
+import 'storage_service.dart';
 
 class ApiService {
-  // Função para garantir que a string tenha apenas caracteres ASCII válidos
-  String _clean(String input) {
-    return input.replaceAll(RegExp(r'[^\x20-\x7E]'), '').trim();
+  final _storage = StorageService();
+
+  Future<Map<String, String>> _getHeaders() async {
+    final credentials = await _storage.getCredentials();
+    final token = credentials['token'];
+    
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
   }
 
-  Future<Terminal> activateTerminal(String terminalId, String apiKey) async {
+  Future<Terminal> activateTerminal(String terminalCode, String apiKey) async {
     try {
-      final host = _clean(ApiConfig.baseUrl);
-      final path = _clean(ApiConfig.authPath);
-      final uri = Uri.https(host, path);
-      
-      print('DEBUG: Chamando API em: ${uri.toString()}');
-
+      final uri = Uri.https(ApiConfig.baseUrl, ApiConfig.authPath);
       final response = await http.post(
         uri,
-        // Removendo headers manuais temporariamente para isolar o erro "Invalid name"
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
         body: jsonEncode({
-          'terminal_id': _clean(terminalId),
-          'api_key': _clean(apiKey),
+          'terminal_code': terminalCode.trim(),
+          'api_key': apiKey.trim(),
         }),
       );
 
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        if (body['ok'] == true) {
-          return Terminal.fromJson(body['data']);
-        } else {
-          throw Exception(body['error'] ?? 'Falha na ativação');
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['ok'] == true) {
+        // Salvar token se vier na resposta
+        if (body['data']['token'] != null) {
+          await _storage.saveCredentials(
+             terminalId: terminalCode, 
+             apiKey: apiKey, 
+             token: body['data']['token']
+          );
         }
+        return Terminal.fromJson(body['data']);
       } else {
-        throw Exception('Erro na requisição: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('DEBUG: Erro detalhado: $e');
-      throw Exception('Erro de conexão: $e');
-    }
-  }
-
-  Future<RoundResponse> getCurrentRound(String terminalId) async {
-    try {
-      final host = _clean(ApiConfig.baseUrl);
-      final path = _clean(ApiConfig.currentRoundPath);
-      final uri = Uri.https(host, path);
-
-      final response = await http.get(
-        uri,
-        headers: {
-          'X-Terminal-ID': _clean(terminalId),
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        if (body['ok'] == true) {
-          return RoundResponse.fromJson(body['data']);
-        } else {
-          throw Exception(body['error'] ?? 'Falha ao buscar rodada');
-        }
-      } else {
-        throw Exception('Erro na requisição: ${response.statusCode}');
+        throw Exception(body['error'] ?? 'Falha na ativação (${response.statusCode})');
       }
     } catch (e) {
       throw Exception('Erro de conexão: $e');
     }
   }
 
-  Future<SaleResponse> createSale(String terminalId, SaleRequest request) async {
+  Future<RoundResponse> getCurrentRound() async {
     try {
-      final host = _clean(ApiConfig.baseUrl);
-      final path = _clean(ApiConfig.salePath);
-      final uri = Uri.https(host, path);
+      final uri = Uri.https(ApiConfig.baseUrl, ApiConfig.currentRoundPath);
+      final headers = await _getHeaders();
+      final response = await http.get(uri, headers: headers);
 
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['ok'] == true) {
+        return RoundResponse.fromJson(body['data']);
+      } else {
+        throw Exception(body['error'] ?? 'Falha ao buscar rodada');
+      }
+    } catch (e) {
+      throw Exception('Erro de conexão: $e');
+    }
+  }
+
+  Future<SaleResponse> createSale(SaleRequest request) async {
+    try {
+      final uri = Uri.https(ApiConfig.baseUrl, ApiConfig.salePath);
+      final headers = await _getHeaders();
       final response = await http.post(
         uri,
-        headers: {
-          'X-Terminal-ID': _clean(terminalId),
-        },
+        headers: headers,
         body: jsonEncode(request.toJson()),
       );
 
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        if (body['ok'] == true) {
-          return SaleResponse.fromJson(body['data']);
-        } else {
-          throw Exception(body['error'] ?? 'Falha ao registrar venda');
-        }
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['ok'] == true) {
+        return SaleResponse.fromJson(body['data']);
       } else {
-        throw Exception('Erro na requisição: ${response.statusCode}');
+        throw Exception(body['error'] ?? 'Falha ao registrar venda');
+      }
+    } catch (e) {
+      throw Exception('Erro de conexão: $e');
+    }
+  }
+
+  Future<String> getPurchaseStatus(int purchaseId) async {
+    try {
+      final uri = Uri.https(ApiConfig.baseUrl, '/pos/purchases/$purchaseId/status');
+      final headers = await _getHeaders();
+      final response = await http.get(uri, headers: headers);
+
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['ok'] == true) {
+        return body['data']['payment_status'];
+      } else {
+        throw Exception(body['error'] ?? 'Erro ao verificar status');
       }
     } catch (e) {
       throw Exception('Erro de conexão: $e');

@@ -50,8 +50,8 @@ class _ActivationScreenState extends State<ActivationScreen> {
       );
       
       await _storageService.saveCredentials(
-        terminal.terminalId,
-        _apiKeyController.text,
+        terminalId: terminal.terminalId,
+        apiKey: _apiKeyController.text,
       );
       
       _navigateToSale();

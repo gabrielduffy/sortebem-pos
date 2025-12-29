@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'screens/activation_screen.dart';
 import 'screens/sale_screen.dart';
+import 'services/storage_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +29,32 @@ class SortebemApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const SaleScreen(), // Ir direto para vendas
+      home: const Initializer(),
+    );
+  }
+}
+
+class Initializer extends StatelessWidget {
+  const Initializer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: StorageService().isActivated(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        // Se ativado vai para Vendas, senão Ativação
+        if (snapshot.data == true) {
+          return const SaleScreen();
+        } else {
+          return const ActivationScreen();
+        }
+      },
     );
   }
 }
