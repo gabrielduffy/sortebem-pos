@@ -8,5 +8,5 @@ class ApiConfig {
   
   // Headers
   static const String headerTerminalId = 'X-Terminal-ID';
-  static const String headerContentType = 'application/json';
+  static const String headerContentType = 'Content-Type';
 }
