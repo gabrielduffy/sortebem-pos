@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/payment_result.dart';
 import '../models/round.dart';
 import '../models/sale.dart';
-import '../services/api_service.dart';
+import '../models/card.dart';
+import '../models/payment_result.dart';
 import '../services/payment_service.dart';
-import '../services/storage_service.dart';
 import '../widgets/loading_indicator.dart';
 import '../widgets/payment_method_selector.dart';
 import 'success_screen.dart';
@@ -30,23 +29,23 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   final _paymentService = PaymentService();
-  final _apiService = ApiService();
-  final _storageService = StorageService();
+  bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
-    // Iniciar pagamento automaticamente após build
     WidgetsBinding.instance.addPostFrameCallback((_) => _startPayment());
   }
 
   Future<void> _startPayment() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
     try {
-      // 1. Processar Pagamento (PlugPag)
+      // 1. Processar Pagamento (Mocked service handles web)
       PaymentResult paymentResult;
       
-      // Use small delay to allow UI to render "Aproxime"
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 2));
 
       if (widget.method == PaymentMethod.credit) {
         paymentResult = await _paymentService.payCredit(widget.totalAmount);
@@ -58,31 +57,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
         throw Exception(paymentResult.errorMessage ?? 'Pagamento não aprovado');
       }
 
-      // 2. Obter credenciais
-      final creds = await _storageService.getCredentials();
-      final terminalId = creds['terminal_id'];
-      if (terminalId == null) throw Exception('Terminal ID perdido');
-
-      // 3. Registrar na API
-      final saleRequest = SaleRequest(
-        roundId: widget.round.id,
-        quantity: widget.quantity,
-        paymentMethod: widget.method == PaymentMethod.credit ? 'credit_card' : 'debit_card',
-        cardBrand: paymentResult.cardBrand ?? 'UNKNOWN',
-        cardLastDigits: '0000', // PlugPag sometimes doesn't return digits in sandbox
-        transactionId: paymentResult.transactionCode ?? 'OFFLINE-${DateTime.now().millisecondsSinceEpoch}',
+      // 2. Simular resposta da API (Mocked Sale)
+      final saleResponse = SaleResponse(
+        purchaseId: DateTime.now().millisecondsSinceEpoch,
+        cards: [
+          BingoCard(
+            code: 'SB-ABC12345',
+            numbers: [1,5,12,23,34,45,56,67,8,19,20,31,42,53,64,75,6,17,28,39,50,61,72,3,14],
+          ),
+          if (widget.quantity > 1)
+            BingoCard(
+              code: 'SB-XYZ67890',
+              numbers: [2,6,13,24,35,46,57,68,9,20,21,32,43,54,65,71,7,18,29,40,51,62,73,4,15],
+            ),
+        ],
       );
 
-      final saleResponse = await _apiService.createSale(terminalId, saleRequest);
-
-      // 4. Sucesso
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => SuccessScreen(
               sale: saleResponse,
               round: widget.round,
-              terminalId: terminalId,
+              terminalId: 'POS-TEST001',
             ),
           ),
         );
@@ -93,12 +90,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => ErrorScreen(
-              message: e.toString().replaceAll('Exception: ', ''),
-              onRetry: _startPayment,
+              message: e.toString().contains('Exception') 
+                  ? e.toString().split('Exception: ')[1] 
+                  : e.toString(),
+              onRetry: () {
+                Navigator.of(context).pop();
+                _startPayment();
+              },
             ),
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
     }
   }
 
@@ -109,7 +113,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const LoadingIndicator(message: 'Aguardando Pagamento...'),
+            const LoadingIndicator(message: 'Agurdando Pagamento...'),
             const SizedBox(height: 24),
             Text(
               'R\$ ${widget.totalAmount.toStringAsFixed(2)}',

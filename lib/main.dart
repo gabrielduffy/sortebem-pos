@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/activation_screen.dart';
+import 'screens/sale_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +27,7 @@ class SortebemApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const ActivationScreen(),
+      home: const SaleScreen(), // Ir direto para vendas
     );
   }
 }

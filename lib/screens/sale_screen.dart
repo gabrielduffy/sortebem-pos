@@ -1,13 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/round.dart';
-import '../services/api_service.dart';
-import '../services/storage_service.dart';
-import '../utils/formatters.dart';
-import '../widgets/loading_indicator.dart';
+import '../models/terminal.dart';
 import '../widgets/quantity_selector.dart';
 import '../widgets/round_selector.dart';
 import '../widgets/payment_method_selector.dart';
+import '../utils/formatters.dart';
 import 'payment_screen.dart';
 
 class SaleScreen extends StatefulWidget {
@@ -18,43 +15,36 @@ class SaleScreen extends StatefulWidget {
 }
 
 class _SaleScreenState extends State<SaleScreen> {
-  final _apiService = ApiService();
-  final _storageService = StorageService();
-  
-  bool _isLoading = true;
-  String? _error;
-  RoundResponse? _rounds;
+  // Dados mockados para teste
+  final RoundResponse mockRoundResponse = RoundResponse(
+    regular: Round(
+      id: 1,
+      number: 123,
+      type: 'regular',
+      cardPrice: 5.00,
+      sellingEndsAt: DateTime.now().add(const Duration(minutes: 7)),
+    ),
+    special: Round(
+      id: 2,
+      number: 124,
+      type: 'special',
+      cardPrice: 10.00,
+      sellingEndsAt: DateTime.now().add(const Duration(minutes: 57)),
+    ),
+  );
+
+  final Terminal mockTerminal = Terminal(
+    terminalId: 'POS-TEST001',
+    establishment: Establishment(id: 1, name: 'Bar do João (Dev)'),
+  );
+
   Round? _selectedRound;
   int _quantity = 1;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    setState(() {
-       _isLoading = true; 
-       _error = null;
-    });
-
-    try {
-      final creds = await _storageService.getCredentials();
-      if (creds['terminal_id'] == null) throw Exception('Terminal não ativado');
-
-      final rounds = await _apiService.getCurrentRound(creds['terminal_id']!);
-      setState(() {
-        _rounds = rounds;
-        _selectedRound = rounds.regular ?? rounds.special;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
-        _isLoading = false;
-      });
-    }
+    _selectedRound = mockRoundResponse.regular;
   }
 
   void _processSale(PaymentMethod method) {
@@ -69,69 +59,21 @@ class _SaleScreenState extends State<SaleScreen> {
           totalAmount: _selectedRound!.cardPrice * _quantity,
         ),
       ),
-    ).then((_) {
-      // Refresh when returning (maybe new round available)
-      _loadData();
-    });
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Scaffold(body: LoadingIndicator(message: 'Carregando rodadas...'));
-
-    if (_error != null) {
-      return Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(
-                'Erro: $_error',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 18),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _loadData,
-                child: const Text('Tentar Novamente'),
-              )
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_selectedRound == null) {
-       return Scaffold(
-        body: Center(
-          child: Column(
-             mainAxisAlignment: MainAxisAlignment.center,
-             children: [
-               const Icon(Icons.warning, size: 64, color: Colors.orange),
-               const SizedBox(height: 16),
-               const Text('Nenhuma rodada disponível no momento.'),
-               const SizedBox(height: 16),
-               ElevatedButton(onPressed: _loadData, child: const Text('Atualizar'))
-             ],
-          ),
-        ),
-       );
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SORTEBEM POS'),
+        title: Column(
+          children: [
+            const Text('SORTEBEM POS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(mockTerminal.establishment.name, style: const TextStyle(fontSize: 12)),
+          ],
+        ),
         centerTitle: true,
         backgroundColor: const Color(0xFFF97316),
-        actions: [
-            IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: _loadData,
-            )
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -142,8 +84,8 @@ class _SaleScreenState extends State<SaleScreen> {
                 child: Column(
                   children: [
                     RoundSelector(
-                      regular: _rounds?.regular,
-                      special: _rounds?.special,
+                      regular: mockRoundResponse.regular,
+                      special: mockRoundResponse.special,
                       selected: _selectedRound,
                       onSelected: (r) => setState(() => _selectedRound = r),
                     ),
