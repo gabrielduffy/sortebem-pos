@@ -61,53 +61,65 @@ class _SuccessScreenState extends State<SuccessScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Icon(Icons.check_circle, size: 80, color: Color(0xFF10B981)),
-            const SizedBox(height: 24),
-            const Text(
-              'Pagamento Aprovado!',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '${widget.sale.cards.length} cartelas geradas',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 48),
-            if (_isPrinting)
-              LoadingIndicator(message: _status)
-            else
-              Text(_status, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
-              
-            const SizedBox(height: 48),
-            SizedBox(
-              height: 56,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                   backgroundColor: const Color(0xFFF97316),
-                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  // Pop until sale screen (root of this flow)
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                child: const Text('NOVA VENDA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFF7ED),
+              Color(0xFFFFEDD5),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.check_circle, size: 80, color: Color(0xFF10B981)),
+              const SizedBox(height: 24),
+              const Text(
+                'Pagamento Aprovado!',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
               ),
-            ),
-            if (!_isPrinting)
-                TextButton(
-                    onPressed: _printReceipt,
-                    child: const Text('Reimprimir'),
-                )
-          ],
+              const SizedBox(height: 16),
+              Text(
+                '${widget.sale.cards.length} cartelas geradas',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 48),
+              if (_isPrinting)
+                LoadingIndicator(message: _status)
+              else
+                Text(_status, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+                
+              const SizedBox(height: 48),
+              SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF97316),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    // Pop until sale screen (root of this flow)
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                  child: const Text('NOVA VENDA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+              ),
+              if (!_isPrinting)
+                  TextButton(
+                      onPressed: _printReceipt,
+                      child: const Text('Reimprimir', style: TextStyle(color: Color(0xFFF97316))),
+                  )
+            ],
+          ),
         ),
       ),
     );

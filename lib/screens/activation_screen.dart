@@ -75,58 +75,77 @@ class _ActivationScreenState extends State<ActivationScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ativação Terminal')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Icon(Icons.settings_remote, size: 64, color: Color(0xFFF97316)),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _terminalIdController,
-              decoration: const InputDecoration(
-                labelText: 'ID do Terminal',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.all(16),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _apiKeyController,
-              decoration: const InputDecoration(
-                labelText: 'Chave de API',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.all(16),
-              ),
-              obscureText: true,
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
-                  textAlign: TextAlign.center,
+      appBar: AppBar(
+        title: const Text('Ativação Terminal', style: TextStyle(color: Color(0xFF1F2937))),
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFF7ED),
+              Color(0xFFFFEDD5),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.tap_and_play, size: 80, color: Color(0xFFF97316)),
+              const SizedBox(height: 48),
+              TextField(
+                controller: _terminalIdController,
+                decoration: const InputDecoration(
+                  labelText: 'ID do Terminal',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
               ),
-            const SizedBox(height: 32),
-            SizedBox(
-              height: 56,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF97316),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _apiKeyController,
+                decoration: const InputDecoration(
+                  labelText: 'Chave de API',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
-                onPressed: _activate,
-                child: const Text(
-                  'ATIVAR TERMINAL',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                obscureText: true,
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              const SizedBox(height: 32),
+              SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF97316),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _activate,
+                  child: const Text(
+                    'ATIVAR',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

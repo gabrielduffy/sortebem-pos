@@ -72,17 +72,31 @@ class _SaleScreenState extends State<SaleScreen> {
           fit: BoxFit.contain,
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFFF97316),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    RoundSelector(
+      body: Container(
+        decoration: const BoxDecoration(
+           Pelas orientações, um gradiente de laranjas de cima para baixo
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFF7ED), // Laranja claríssimo (quase branco)
+              Color(0xFFFFEDD5), // Laranja claro
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      RoundSelector(
                       regular: mockRoundResponse.regular,
                       special: mockRoundResponse.special,
                       selected: _selectedRound,
@@ -117,6 +131,7 @@ class _SaleScreenState extends State<SaleScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }

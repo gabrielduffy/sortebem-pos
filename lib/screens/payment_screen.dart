@@ -109,19 +109,31 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const LoadingIndicator(message: 'Agurdando Pagamento...'),
-            const SizedBox(height: 24),
-            Text(
-              'R\$ ${widget.totalAmount.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            const Text('Insira ou aproxime o cartão', style: TextStyle(fontSize: 18)),
-          ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFF7ED),
+              Color(0xFFFFEDD5),
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const LoadingIndicator(message: 'Agurdando Pagamento...'),
+              const SizedBox(height: 24),
+              Text(
+                'R\$ ${widget.totalAmount.toStringAsFixed(2)}',
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text('Insira ou aproxime o cartão', style: TextStyle(fontSize: 18)),
+            ],
+          ),
         ),
       ),
     );
